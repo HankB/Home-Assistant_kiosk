@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Start the Home Assistant kiosk browser.
+/home/kiosk/bin/kiosk.sh &
+
+# Start the local photo screensaver controller.
+/home/kiosk/bin/screensaver-controller.py &
