@@ -1,199 +1,202 @@
-type: panel
-path: kiosk
-title: Kiosk
-cards:
-  - type: vertical-stack
+kiosk_mode:
+  hide_header: true
+views:
+  - type: panel
+    path: kiosk
+    title: Kiosk
     cards:
-      - type: grid
-        columns: 2
-        square: false
+      - type: vertical-stack
         cards:
-          - type: weather-forecast
-            entity: weather.forecast_home
-            name: Home
-            show_forecast: false
-          - type: custom:button-card
-            entity: sensor.comed_5_minute_price
-            name: ComEd Price
-            show_state: true
-            show_label: true
-            state_display: |
-              [[[
-                const price = parseFloat(entity.state);
-                if (isNaN(price)) return "Unavailable";
-                return `${price.toFixed(1)} ¢/kWh`;
-              ]]]
-            label: |
-              [[[
-                const price = parseFloat(entity.state);
-                if (isNaN(price)) return "";
-                if (price < 8) return "GOOD";
-                if (price < 14) return "MODERATE";
-                return "HIGH";
-              ]]]
-            styles:
-              card:
-                - height: 120px
-                - background-color: |
-                    [[[
-                      const price = parseFloat(entity.state);
-                      if (isNaN(price)) return '#2f3542';
-                      if (price < 8) return '#2ed573';
-                      if (price < 14) return '#8B5A2B';
-                      return '#ff4757';
-                    ]]]
-              name:
-                - font-weight: bold
-                - color: white
-                - font-size: 16px
-              state:
-                - font-size: 28px
-                - font-weight: bold
-                - color: white
-              label:
-                - font-size: 14px
-                - font-weight: bold
-                - color: white
-      - type: grid
-        columns: 3
-        square: false
-        cards:
-          - type: custom:button-card
-            entity: sensor.basement_temp_sht31
-            name: Basement
-            show_state: false
-            show_label: true
-            icon: mdi:home-thermometer-outline
-            label: |
-              [[[
-                const temp = states['sensor.basement_temp_sht31'].state;
-                const humid = states['sensor.basement_humid_sht31'].state;
-                return `${temp}°F   💧 ${humid}%`;
-              ]]]
-            styles:
-              card:
-                - height: 95px
-              name:
-                - font-size: 16px
-                - font-weight: bold
-              label:
-                - font-size: 20px
-                - font-weight: bold
-          - type: custom:button-card
-            entity: sensor.dining_rm_west_temp
-            name: Dining Room
-            show_state: false
-            show_label: true
-            icon: mdi:home-thermometer-outline
-            label: |
-              [[[
-                const temp = states['sensor.dining_rm_west_temp'].state;
-                const humid = states['sensor.dining_rm_west_humid'].state;
-                return `${temp}°F   💧 ${humid}%`;
-              ]]]
-            styles:
-              card:
-                - height: 95px
-              name:
-                - font-size: 16px
-                - font-weight: bold
-              label:
-                - font-size: 20px
-                - font-weight: bold
-          - type: custom:button-card
-            entity: sensor.aht20_bedroom_temp
-            name: Bedroom
-            show_state: false
-            show_label: true
-            icon: mdi:home-thermometer-outline
-            label: |
-              [[[
-                const temp = states['sensor.aht20_bedroom_temp'].state;
-                const humid = states['sensor.aht20_bedroom_humid'].state;
-                return `${temp}°F   💧 ${humid}%`;
-              ]]]
-            styles:
-              card:
-                - height: 95px
-              name:
-                - font-size: 16px
-                - font-weight: bold
-              label:
-                - font-size: 20px
-                - font-weight: bold
-      - type: grid
-        columns: 3
-        square: false
-        cards:
-          - type: tile
-            entity: light.famrm_cindy
-            name: Cindy
-            icon: mdi:lightbulb
-            tap_action:
-              action: toggle
-            hold_action:
-              action: more-info
-          - type: tile
-            entity: light.famrm_hank
-            name: Hank
-            icon: mdi:lightbulb
-            tap_action:
-              action: toggle
-            hold_action:
-              action: more-info
-          - type: tile
-            entity: light.living_room_color
-            name: Living Room
-            icon: mdi:lightbulb
-            tap_action:
-              action: toggle
-            hold_action:
-              action: more-info
-          - type: tile
-            entity: switch.outdoor_plug_1
-            name: Outdoor
-            icon: mdi:power-socket-us
-            tap_action:
-              action: toggle
-            hold_action:
-              action: more-info
-          - type: tile
-            entity: switch.outdoor_plug_2
-            name: Outdoor
-            icon: mdi:power-socket-us
-            tap_action:
-              action: toggle
-            hold_action:
-              action: more-info
-          - type: tile
-            entity: switch.tpplug02_garage_lights
-            name: Garage Light
-            icon: mdi:lightbulb
-            tap_action:
-              action: toggle
-            hold_action:
-              action: more-info
-      - type: grid
-        columns: 5
-        square: false
-        cards:
-          - type: tile
-            entity: sensor.fridge_temp
-            name: Fridge
-            icon: mdi:fridge-outline
-          - type: tile
-            entity: sensor.kitchen_fridge_power
-            name: Fridge W
-            icon: mdi:flash
-          - type: tile
-            entity: sensor.freezer_temp
-            name: Freezer
-            icon: mdi:snowflake
-          - type: tile
-            entity: sensor.basement_freezer_power
-            name: Freezer W
-            icon: mdi:flash
-          - type: tile
-            entity: sensor.garage_door_position
-            name: Garage
-            icon: mdi:garage
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: weather-forecast
+                entity: weather.forecast_home
+                name: Home
+                show_forecast: false
+              - type: custom:button-card
+                entity: sensor.comed_5_minute_price
+                name: ComEd Price
+                show_state: true
+                show_label: true
+                state_display: |
+                  [[[
+                    const price = parseFloat(entity.state);
+                    if (isNaN(price)) return "Unavailable";
+                    return `${price.toFixed(1)} ¢/kWh`;
+                  ]]]
+                label: |
+                  [[[
+                    const price = parseFloat(entity.state);
+                    if (isNaN(price)) return "";
+                    if (price < 8) return "GOOD";
+                    if (price < 14) return "MODERATE";
+                    return "HIGH";
+                  ]]]
+                styles:
+                  card:
+                    - height: 120px
+                    - background-color: |
+                        [[[
+                          const price = parseFloat(entity.state);
+                          if (isNaN(price)) return '#2f3542';
+                          if (price < 8) return '#2ed573';
+                          if (price < 14) return '#8B5A2B';
+                          return '#ff4757';
+                        ]]]
+                  name:
+                    - font-weight: bold
+                    - color: white
+                    - font-size: 16px
+                  state:
+                    - font-size: 28px
+                    - font-weight: bold
+                    - color: white
+                  label:
+                    - font-size: 14px
+                    - font-weight: bold
+                    - color: white
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: custom:button-card
+                entity: sensor.basement_temp_sht31
+                name: Basement
+                show_state: false
+                show_label: true
+                icon: mdi:home-thermometer-outline
+                label: |
+                  [[[
+                    const temp = states['sensor.basement_temp_sht31'].state;
+                    const humid = states['sensor.basement_humid_sht31'].state;
+                    return `${temp}°F   💧 ${humid}%`;
+                  ]]]
+                styles:
+                  card:
+                    - height: 95px
+                  name:
+                    - font-size: 16px
+                    - font-weight: bold
+                  label:
+                    - font-size: 20px
+                    - font-weight: bold
+              - type: custom:button-card
+                entity: sensor.dining_rm_west_temp
+                name: Dining Room
+                show_state: false
+                show_label: true
+                icon: mdi:home-thermometer-outline
+                label: |
+                  [[[
+                    const temp = states['sensor.dining_rm_west_temp'].state;
+                    const humid = states['sensor.dining_rm_west_humid'].state;
+                    return `${temp}°F   💧 ${humid}%`;
+                  ]]]
+                styles:
+                  card:
+                    - height: 95px
+                  name:
+                    - font-size: 16px
+                    - font-weight: bold
+                  label:
+                    - font-size: 20px
+                    - font-weight: bold
+              - type: custom:button-card
+                entity: sensor.aht20_bedroom_temp
+                name: Bedroom
+                show_state: false
+                show_label: true
+                icon: mdi:home-thermometer-outline
+                label: |
+                  [[[
+                    const temp = states['sensor.aht20_bedroom_temp'].state;
+                    const humid = states['sensor.aht20_bedroom_humid'].state;
+                    return `${temp}°F   💧 ${humid}%`;
+                  ]]]
+                styles:
+                  card:
+                    - height: 95px
+                  name:
+                    - font-size: 16px
+                    - font-weight: bold
+                  label:
+                    - font-size: 20px
+                    - font-weight: bold
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: tile
+                entity: light.famrm_cindy
+                name: Cindy
+                icon: mdi:lightbulb
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+              - type: tile
+                entity: light.famrm_hank
+                name: Hank
+                icon: mdi:lightbulb
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+              - type: tile
+                entity: light.living_room_color
+                name: Living Room
+                icon: mdi:lightbulb
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+              - type: tile
+                entity: switch.outdoor_plug_1
+                name: Outdoor
+                icon: mdi:power-socket-us
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+              - type: tile
+                entity: switch.outdoor_plug_2
+                name: Outdoor
+                icon: mdi:power-socket-us
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+              - type: tile
+                entity: switch.tpplug02_garage_lights
+                name: Garage Light
+                icon: mdi:lightbulb
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+          - type: grid
+            columns: 5
+            square: false
+            cards:
+              - type: tile
+                entity: sensor.fridge_temp
+                name: Fridge
+                icon: mdi:fridge-outline
+              - type: tile
+                entity: sensor.kitchen_fridge_power
+                name: Fridge W
+                icon: mdi:flash
+              - type: tile
+                entity: sensor.freezer_temp
+                name: Freezer
+                icon: mdi:snowflake
+              - type: tile
+                entity: sensor.basement_freezer_power
+                name: Freezer W
+                icon: mdi:flash
+              - type: tile
+                entity: sensor.garage_door_position
+                name: Garage
+                icon: mdi:garage
