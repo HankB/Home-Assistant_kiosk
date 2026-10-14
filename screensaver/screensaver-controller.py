@@ -19,7 +19,7 @@ import paho.mqtt.client as mqtt
 DEVICE = "/dev/input/event2"
 
 # Normal operation: 300.
-IDLE_TIMEOUT = 300
+IDLE_TIMEOUT = 60
 
 IMAGE_DIRECTORY = os.path.expanduser("~/Pictures/screensaver")
 
@@ -32,10 +32,9 @@ MQTT_BROKER = "pilog3b"
 MQTT_PORT = 1883
 MQTT_TOPIC = "HA/kiosk/kiosk/lighting"
 
-# Maximum acceptable age of a sensor reading.
-#
-# 120 seconds is convenient for testing. Production should be longer
-# than the sensor's normal 15-minute reporting interval.
+# 120 seconds is convenient for testing.
+# Production should be comfortably longer than the sensor's normal
+# 15-minute reporting interval.
 LIGHT_READING_MAX_AGE = 120
 
 # Hysteresis:
@@ -47,14 +46,20 @@ LIGHT_READING_MAX_AGE = 120
 DARK_THRESHOLD = 10
 LIGHT_THRESHOLD = 20
 
-# How long a candidate condition must persist before becoming the
-# authoritative ambient state.
-DARK_CONFIRM_TIME = 30
-LIGHT_CONFIRM_TIME = 30
+# Short values are useful during testing.
+DARK_CONFIRM_TIME = 10
+LIGHT_CONFIRM_TIME = 10
 
-# How often the ambient-state monitor reevaluates qualification and
-# reading freshness.
+# How often qualification and freshness are reevaluated.
 AMBIENT_CHECK_INTERVAL = 1
+
+
+#
+# Display configuration
+#
+
+XDG_RUNTIME_DIR = f"/run/user/{os.getuid()}"
+WAYLAND_DISPLAY = "wayland-0"
 
 
 #
@@ -82,9 +87,15 @@ ambient_timestamp = None
 # Unknown/stale data defaults to LIGHT.
 ambient_state = "LIGHT"
 
-# Candidate state waiting for its confirmation interval.
 ambient_candidate = None
 ambient_candidate_since = None
+
+
+def log(message):
+    """Print a timestamped diagnostic message."""
+
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp}  {message}", flush=True)
 
 
 def grab(fd, enable):
@@ -106,9 +117,92 @@ def read_event(fd):
     return event_type, code, value
 
 
+def wayland_environment():
+    """Return an environment suitable for Wayland helper programs."""
+
+    env = os.environ.copy()
+    env["XDG_RUNTIME_DIR"] = XDG_RUNTIME_DIR
+    env["WAYLAND_DISPLAY"] = WAYLAND_DISPLAY
+
+    return env
+
+
+def display_on():
+    """Turn the Wayland output on."""
+
+    log("Display: ON")
+
+    subprocess.run(
+        ["wlopm", "--on", "*"],
+        env=wayland_environment(),
+        check=False,
+    )
+
+
+def display_off():
+    """Turn the Wayland output off."""
+
+    log("Display: OFF")
+
+    subprocess.run(
+        ["wlopm", "--off", "*"],
+        env=wayland_environment(),
+        check=False,
+    )
+
+
+def start_slideshow():
+    """Start swayimg and return its process object."""
+
+    swayimg = subprocess.Popen(
+        [
+            "swayimg",
+            "--fullscreen",
+            "--slideshow",
+            "--order=random",
+            "--scale=fill",
+            IMAGE_DIRECTORY,
+        ],
+        env=wayland_environment(),
+    )
+
+    log(f"swayimg started as PID {swayimg.pid}")
+
+    return swayimg
+
+
+def stop_slideshow(swayimg):
+    """Stop swayimg if it is still running."""
+
+    if swayimg is None:
+        return
+
+    if swayimg.poll() is not None:
+        return
+
+    log(f"Stopping swayimg PID {swayimg.pid}")
+
+    swayimg.terminate()
+
+    try:
+        swayimg.wait(timeout=2)
+
+    except subprocess.TimeoutExpired:
+        log(f"Killing swayimg PID {swayimg.pid}")
+        swayimg.kill()
+        swayimg.wait()
+
+
 #
 # Ambient-light state handling
 #
+
+def get_ambient_state():
+    """Return the current authoritative ambient state."""
+
+    with ambient_lock:
+        return ambient_state
+
 
 def set_candidate(candidate):
     """
@@ -121,14 +215,10 @@ def set_candidate(candidate):
     global ambient_candidate_since
 
     if candidate == ambient_state:
-        #
-        # The reading supports our current authoritative state.
-        # Any pending transition in the other direction is cancelled.
-        #
         if ambient_candidate is not None:
-            print(
-                f"Ambient: candidate {ambient_candidate} cancelled",
-                flush=True,
+            log(
+                f"Ambient: candidate {ambient_candidate} cancelled; "
+                f"reading supports current state {ambient_state}"
             )
 
         ambient_candidate = None
@@ -139,9 +229,9 @@ def set_candidate(candidate):
         ambient_candidate = candidate
         ambient_candidate_since = time.monotonic()
 
-        print(
-            f"Ambient: candidate {candidate} started",
-            flush=True,
+        log(
+            f"Ambient: candidate {candidate} started; "
+            f"current state={ambient_state}"
         )
 
 
@@ -159,10 +249,10 @@ def update_candidate_from_level(level):
         set_candidate("LIGHT")
 
     else:
-        print(
+        log(
             f"Ambient: level={level} in hysteresis band; "
-            "state unchanged",
-            flush=True,
+            f"state={ambient_state}, "
+            f"candidate={ambient_candidate}"
         )
 
 
@@ -170,9 +260,6 @@ def ambient_monitor():
     """
     Periodically reevaluate reading freshness and candidate-state
     qualification.
-
-    This thread only derives and reports LIGHT/DARK state. It does not
-    control swayimg or the display.
     """
 
     global ambient_level
@@ -187,23 +274,15 @@ def ambient_monitor():
         with ambient_lock:
             now = time.time()
 
-            #
-            # Missing data means LIGHT.
-            #
             if ambient_timestamp is None:
                 continue
 
             age = now - ambient_timestamp
 
-            #
-            # Once our most recent accepted reading becomes stale,
-            # discard it and return to the safe/default LIGHT state.
-            #
             if age > LIGHT_READING_MAX_AGE:
-                print(
+                log(
                     f"Ambient: reading became stale "
-                    f"(age={age:.0f}s); defaulting to LIGHT",
-                    flush=True,
+                    f"(age={age:.0f}s); defaulting to LIGHT"
                 )
 
                 ambient_level = None
@@ -213,11 +292,7 @@ def ambient_monitor():
 
                 if ambient_state != "LIGHT":
                     ambient_state = "LIGHT"
-
-                    print(
-                        "Ambient state: LIGHT",
-                        flush=True,
-                    )
+                    log("Ambient state: LIGHT")
 
                 continue
 
@@ -243,9 +318,9 @@ def ambient_monitor():
             ambient_candidate = None
             ambient_candidate_since = None
 
-            print(
-                f"Ambient state: {new_state}",
-                flush=True,
+            log(
+                f"Ambient state: {new_state} "
+                f"(confirmed after {elapsed:.1f}s)"
             )
 
 
@@ -257,22 +332,19 @@ def on_connect(client, userdata, flags, reason_code, properties):
     """Subscribe to the ambient-light topic after connecting."""
 
     if reason_code == 0:
-        print(
-            f"MQTT connected to {MQTT_BROKER}:{MQTT_PORT}",
-            flush=True,
+        log(
+            f"MQTT connected to {MQTT_BROKER}:{MQTT_PORT}"
         )
 
         client.subscribe(MQTT_TOPIC)
 
-        print(
-            f"MQTT subscribed to {MQTT_TOPIC}",
-            flush=True,
+        log(
+            f"MQTT subscribed to {MQTT_TOPIC}"
         )
 
     else:
-        print(
-            f"MQTT connection failed: {reason_code}",
-            flush=True,
+        log(
+            f"MQTT connection failed: {reason_code}"
         )
 
 
@@ -285,9 +357,8 @@ def on_disconnect(
 ):
     """Report loss of the MQTT connection."""
 
-    print(
-        f"MQTT disconnected: {reason_code}",
-        flush=True,
+    log(
+        f"MQTT disconnected: {reason_code}"
     )
 
 
@@ -301,16 +372,14 @@ def on_message(client, userdata, message):
         payload = json.loads(message.payload.decode("utf-8"))
 
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        print(
-            f"Lighting: malformed JSON -- ignored ({exc})",
-            flush=True,
+        log(
+            f"Lighting: malformed JSON -- ignored ({exc})"
         )
         return
 
     if not isinstance(payload, dict):
-        print(
-            "Lighting: payload is not a JSON object -- ignored",
-            flush=True,
+        log(
+            "Lighting: payload is not a JSON object -- ignored"
         )
         return
 
@@ -319,36 +388,29 @@ def on_message(client, userdata, message):
         level = int(payload["level"])
 
     except (KeyError, TypeError, ValueError):
-        print(
-            "Lighting: missing or invalid t/level -- ignored",
-            flush=True,
+        log(
+            "Lighting: missing or invalid t/level -- ignored"
         )
         return
 
     if not 1 <= level <= 100:
-        print(
-            f"Lighting: invalid level={level} -- ignored",
-            flush=True,
+        log(
+            f"Lighting: invalid level={level} -- ignored"
         )
         return
 
     now = time.time()
     age = now - timestamp
 
-    #
-    # Allow a few seconds for harmless clock differences.
-    #
     if age < -5:
-        print(
-            f"Lighting: timestamp is {-age:.0f}s in the future -- ignored",
-            flush=True,
+        log(
+            f"Lighting: timestamp is {-age:.0f}s in the future -- ignored"
         )
         return
 
     if age > LIGHT_READING_MAX_AGE:
-        print(
-            f"Lighting: level={level} age={age:.0f}s STALE -- ignored",
-            flush=True,
+        log(
+            f"Lighting: level={level} age={age:.0f}s STALE -- ignored"
         )
         return
 
@@ -356,9 +418,9 @@ def on_message(client, userdata, message):
         ambient_level = level
         ambient_timestamp = timestamp
 
-        print(
-            f"Lighting: level={level} age={max(0, age):.0f}s ACCEPTED",
-            flush=True,
+        log(
+            f"Lighting: level={level} "
+            f"age={max(0, age):.0f}s ACCEPTED"
         )
 
         update_candidate_from_level(level)
@@ -376,9 +438,8 @@ def start_mqtt():
     client.on_disconnect = on_disconnect
     client.on_message = on_message
 
-    print(
-        f"Connecting to MQTT broker {MQTT_BROKER}:{MQTT_PORT}...",
-        flush=True,
+    log(
+        f"Connecting to MQTT broker {MQTT_BROKER}:{MQTT_PORT}..."
     )
 
     client.connect_async(
@@ -392,12 +453,16 @@ def start_mqtt():
     return client
 
 
+#
+# Active kiosk / idle handling
+#
+
 def wait_for_idle(fd):
     """
     Monitor the touchscreen without grabbing it.
 
     Every BTN_TOUCH down event resets the idle timer. While we're in
-    this state, labwc continues receiving all touchscreen events normally.
+    this state, labwc receives touchscreen events normally.
     """
 
     deadline = time.monotonic() + IDLE_TIMEOUT
@@ -419,78 +484,140 @@ def wait_for_idle(fd):
             deadline = time.monotonic() + IDLE_TIMEOUT
 
 
-def run_screensaver(fd):
+def wait_for_wake_or_state_change(fd, state):
     """
-    Grab the touchscreen, start swayimg, and consume the first complete
-    touch gesture before returning control to labwc.
+    Wait for either a wake touch or an ambient-state change.
+
+    Return "TOUCH" or "STATE".
     """
 
-    print("Idle timeout reached; grabbing touchscreen.", flush=True)
+    while True:
+        readable, _, _ = select.select(
+            [fd],
+            [],
+            [],
+            AMBIENT_CHECK_INTERVAL,
+        )
+
+        if readable:
+            event_type, code, value = read_event(fd)
+
+            if (
+                event_type == EV_KEY
+                and code == BTN_TOUCH
+                and value == 1
+            ):
+                return "TOUCH"
+
+        if get_ambient_state() != state:
+            return "STATE"
+
+
+def consume_touch_up(fd):
+    """Consume touchscreen events through the corresponding finger UP."""
+
+    while True:
+        event_type, code, value = read_event(fd)
+
+        if (
+            event_type == EV_KEY
+            and code == BTN_TOUCH
+            and value == 0
+        ):
+            log("Wake touch UP")
+            return
+
+
+def run_idle(fd):
+    """
+    Own the touchscreen while the kiosk is idle.
+
+    LIGHT -> slideshow
+    DARK  -> display off
+
+    Ambient-state changes are honored while idle. The first wake
+    gesture is consumed completely before returning control to labwc.
+    """
+
+    log("Idle timeout reached; grabbing touchscreen")
 
     grab(fd, True)
 
     swayimg = None
+    display_is_on = True
 
     try:
-        env = os.environ.copy()
-
-        env["XDG_RUNTIME_DIR"] = f"/run/user/{os.getuid()}"
-        env["WAYLAND_DISPLAY"] = "wayland-0"
-
-        swayimg = subprocess.Popen(
-            [
-                "swayimg",
-                "--fullscreen",
-                "--slideshow",
-                "--order=random",
-                "--scale=fill",
-                IMAGE_DIRECTORY,
-            ],
-            env=env,
-        )
-
-        print(f"swayimg started as PID {swayimg.pid}", flush=True)
-
         while True:
-            event_type, code, value = read_event(fd)
+            state = get_ambient_state()
 
-            if event_type == EV_KEY and code == BTN_TOUCH and value == 1:
-                print("Wake touch DOWN.", flush=True)
-                break
+            if state == "LIGHT":
+                if not display_is_on:
+                    display_on()
+                    display_is_on = True
 
-        if swayimg.poll() is None:
-            swayimg.terminate()
+                if swayimg is None or swayimg.poll() is not None:
+                    swayimg = start_slideshow()
 
-        while True:
-            event_type, code, value = read_event(fd)
+            else:
+                if swayimg is not None:
+                    stop_slideshow(swayimg)
+                    swayimg = None
 
-            if event_type == EV_KEY and code == BTN_TOUCH and value == 0:
-                print("Wake touch UP.", flush=True)
-                break
+                if display_is_on:
+                    display_off()
+                    display_is_on = False
 
-        try:
-            swayimg.wait(timeout=2)
+            result = wait_for_wake_or_state_change(fd, state)
 
-        except subprocess.TimeoutExpired:
-            swayimg.kill()
-            swayimg.wait()
+            if result == "STATE":
+                new_state = get_ambient_state()
+
+                log(
+                    f"Idle ambient transition: "
+                    f"{state} -> {new_state}"
+                )
+
+                continue
+
+            #
+            # Finger DOWN has occurred. Keep the touchscreen grabbed
+            # until the entire gesture has been consumed.
+            #
+
+            log("Wake touch DOWN")
+
+            if swayimg is not None:
+                stop_slideshow(swayimg)
+                swayimg = None
+
+            #
+            # If the display was dark, turn it on while we still own
+            # the wake gesture.
+            #
+
+            if not display_is_on:
+                display_on()
+                display_is_on = True
+
+            consume_touch_up(fd)
+
+            return
 
     finally:
-        print("Releasing touchscreen.", flush=True)
+        #
+        # Never leave the display off or swayimg running when returning
+        # control to the active kiosk.
+        #
 
-        try:
-            grab(fd, False)
+        if swayimg is not None:
+            stop_slideshow(swayimg)
 
-        finally:
-            if swayimg is not None and swayimg.poll() is None:
-                swayimg.terminate()
+        if not display_is_on:
+            display_on()
 
-                try:
-                    swayimg.wait(timeout=2)
+        log("Releasing touchscreen")
 
-                except subprocess.TimeoutExpired:
-                    swayimg.kill()
-                    swayimg.wait()
+        grab(fd, False)
 
 
 def main():
@@ -504,19 +631,18 @@ def main():
 
     monitor_thread.start()
 
-    print(f"Opening {DEVICE}", flush=True)
+    log(f"Opening {DEVICE}")
 
     fd = os.open(DEVICE, os.O_RDONLY)
 
     try:
         while True:
-            print(
-                f"Watching for {IDLE_TIMEOUT} seconds of inactivity...",
-                flush=True,
+            log(
+                f"Watching for {IDLE_TIMEOUT} seconds of inactivity..."
             )
 
             wait_for_idle(fd)
-            run_screensaver(fd)
+            run_idle(fd)
 
     finally:
         os.close(fd)
