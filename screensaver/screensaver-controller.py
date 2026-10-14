@@ -18,10 +18,11 @@ import paho.mqtt.client as mqtt
 
 DEVICE = "/dev/input/event2"
 
-# Use a short value while testing. Normal operation is 300.
+# Normal operation: 300.
 IDLE_TIMEOUT = 300
 
 IMAGE_DIRECTORY = os.path.expanduser("~/Pictures/screensaver")
+
 
 #
 # MQTT / ambient-light configuration
@@ -31,18 +32,29 @@ MQTT_BROKER = "pilog3b"
 MQTT_PORT = 1883
 MQTT_TOPIC = "HA/kiosk/kiosk/lighting"
 
-# Maximum acceptable age of a sensor reading, in seconds.
-# 120 is convenient for testing. This should be increased when the
-# sensor's normal 15-minute reporting interval is put into service.
+# Maximum acceptable age of a sensor reading.
+#
+# 120 seconds is convenient for testing. Production should be longer
+# than the sensor's normal 15-minute reporting interval.
 LIGHT_READING_MAX_AGE = 120
 
-# These aren't used to control anything yet. They're collected here
-# now so the eventual light/dark policy remains easy to configure.
+# Hysteresis:
+#
+#   level <= DARK_THRESHOLD   -> candidate DARK
+#   level >= LIGHT_THRESHOLD  -> candidate LIGHT
+#   between thresholds        -> retain current/candidate state
+#
 DARK_THRESHOLD = 10
 LIGHT_THRESHOLD = 20
 
+# How long a candidate condition must persist before becoming the
+# authoritative ambient state.
 DARK_CONFIRM_TIME = 30
 LIGHT_CONFIRM_TIME = 30
+
+# How often the ambient-state monitor reevaluates qualification and
+# reading freshness.
+AMBIENT_CHECK_INTERVAL = 1
 
 
 #
@@ -61,14 +73,18 @@ EVENT_SIZE = struct.calcsize(EVENT_FORMAT)
 #
 # Ambient-light state
 #
-# This is populated by the MQTT thread but is deliberately NOT used
-# by the screensaver logic yet.
-#
 
 ambient_lock = threading.Lock()
 
 ambient_level = None
 ambient_timestamp = None
+
+# Unknown/stale data defaults to LIGHT.
+ambient_state = "LIGHT"
+
+# Candidate state waiting for its confirmation interval.
+ambient_candidate = None
+ambient_candidate_since = None
 
 
 def grab(fd, enable):
@@ -91,6 +107,149 @@ def read_event(fd):
 
 
 #
+# Ambient-light state handling
+#
+
+def set_candidate(candidate):
+    """
+    Start or update a candidate ambient state.
+
+    The caller must hold ambient_lock.
+    """
+
+    global ambient_candidate
+    global ambient_candidate_since
+
+    if candidate == ambient_state:
+        #
+        # The reading supports our current authoritative state.
+        # Any pending transition in the other direction is cancelled.
+        #
+        if ambient_candidate is not None:
+            print(
+                f"Ambient: candidate {ambient_candidate} cancelled",
+                flush=True,
+            )
+
+        ambient_candidate = None
+        ambient_candidate_since = None
+        return
+
+    if candidate != ambient_candidate:
+        ambient_candidate = candidate
+        ambient_candidate_since = time.monotonic()
+
+        print(
+            f"Ambient: candidate {candidate} started",
+            flush=True,
+        )
+
+
+def update_candidate_from_level(level):
+    """
+    Apply hysteresis to a newly accepted light reading.
+
+    The caller must hold ambient_lock.
+    """
+
+    if level <= DARK_THRESHOLD:
+        set_candidate("DARK")
+
+    elif level >= LIGHT_THRESHOLD:
+        set_candidate("LIGHT")
+
+    else:
+        print(
+            f"Ambient: level={level} in hysteresis band; "
+            "state unchanged",
+            flush=True,
+        )
+
+
+def ambient_monitor():
+    """
+    Periodically reevaluate reading freshness and candidate-state
+    qualification.
+
+    This thread only derives and reports LIGHT/DARK state. It does not
+    control swayimg or the display.
+    """
+
+    global ambient_level
+    global ambient_timestamp
+    global ambient_state
+    global ambient_candidate
+    global ambient_candidate_since
+
+    while True:
+        time.sleep(AMBIENT_CHECK_INTERVAL)
+
+        with ambient_lock:
+            now = time.time()
+
+            #
+            # Missing data means LIGHT.
+            #
+            if ambient_timestamp is None:
+                continue
+
+            age = now - ambient_timestamp
+
+            #
+            # Once our most recent accepted reading becomes stale,
+            # discard it and return to the safe/default LIGHT state.
+            #
+            if age > LIGHT_READING_MAX_AGE:
+                print(
+                    f"Ambient: reading became stale "
+                    f"(age={age:.0f}s); defaulting to LIGHT",
+                    flush=True,
+                )
+
+                ambient_level = None
+                ambient_timestamp = None
+                ambient_candidate = None
+                ambient_candidate_since = None
+
+                if ambient_state != "LIGHT":
+                    ambient_state = "LIGHT"
+
+                    print(
+                        "Ambient state: LIGHT",
+                        flush=True,
+                    )
+
+                continue
+
+            if (
+                ambient_candidate is None
+                or ambient_candidate_since is None
+            ):
+                continue
+
+            elapsed = time.monotonic() - ambient_candidate_since
+
+            if ambient_candidate == "DARK":
+                confirm_time = DARK_CONFIRM_TIME
+            else:
+                confirm_time = LIGHT_CONFIRM_TIME
+
+            if elapsed < confirm_time:
+                continue
+
+            new_state = ambient_candidate
+
+            ambient_state = new_state
+            ambient_candidate = None
+            ambient_candidate_since = None
+
+            print(
+                f"Ambient state: {new_state}",
+                flush=True,
+            )
+
+
+#
 # MQTT callbacks
 #
 
@@ -109,6 +268,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
             f"MQTT subscribed to {MQTT_TOPIC}",
             flush=True,
         )
+
     else:
         print(
             f"MQTT connection failed: {reason_code}",
@@ -116,8 +276,13 @@ def on_connect(client, userdata, flags, reason_code, properties):
         )
 
 
-def on_disconnect(client, userdata, disconnect_flags,
-                  reason_code, properties):
+def on_disconnect(
+    client,
+    userdata,
+    disconnect_flags,
+    reason_code,
+    properties,
+):
     """Report loss of the MQTT connection."""
 
     print(
@@ -134,6 +299,7 @@ def on_message(client, userdata, message):
 
     try:
         payload = json.loads(message.payload.decode("utf-8"))
+
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         print(
             f"Lighting: malformed JSON -- ignored ({exc})",
@@ -151,6 +317,7 @@ def on_message(client, userdata, message):
     try:
         timestamp = int(payload["t"])
         level = int(payload["level"])
+
     except (KeyError, TypeError, ValueError):
         print(
             "Lighting: missing or invalid t/level -- ignored",
@@ -169,8 +336,7 @@ def on_message(client, userdata, message):
     age = now - timestamp
 
     #
-    # A future timestamp is also considered invalid. Allow a few
-    # seconds for harmless clock/processing differences.
+    # Allow a few seconds for harmless clock differences.
     #
     if age < -5:
         print(
@@ -190,10 +356,12 @@ def on_message(client, userdata, message):
         ambient_level = level
         ambient_timestamp = timestamp
 
-    print(
-        f"Lighting: level={level} age={max(0, age):.0f}s ACCEPTED",
-        flush=True,
-    )
+        print(
+            f"Lighting: level={level} age={max(0, age):.0f}s ACCEPTED",
+            flush=True,
+        )
+
+        update_candidate_from_level(level)
 
 
 def start_mqtt():
@@ -213,10 +381,6 @@ def start_mqtt():
         flush=True,
     )
 
-    #
-    # connect_async() avoids making MQTT availability a prerequisite
-    # for starting the kiosk screensaver controller.
-    #
     client.connect_async(
         MQTT_BROKER,
         MQTT_PORT,
@@ -247,7 +411,6 @@ def wait_for_idle(fd):
         readable, _, _ = select.select([fd], [], [], remaining)
 
         if not readable:
-            # select() timed out: no relevant activity.
             return
 
         event_type, code, value = read_event(fd)
@@ -288,10 +451,6 @@ def run_screensaver(fd):
 
         print(f"swayimg started as PID {swayimg.pid}", flush=True)
 
-        #
-        # Wait for finger DOWN.
-        #
-
         while True:
             event_type, code, value = read_event(fd)
 
@@ -299,16 +458,8 @@ def run_screensaver(fd):
                 print("Wake touch DOWN.", flush=True)
                 break
 
-        #
-        # Remove the slideshow, but KEEP the touchscreen grabbed.
-        #
-
         if swayimg.poll() is None:
             swayimg.terminate()
-
-        #
-        # Consume everything through finger UP.
-        #
 
         while True:
             event_type, code, value = read_event(fd)
@@ -317,12 +468,9 @@ def run_screensaver(fd):
                 print("Wake touch UP.", flush=True)
                 break
 
-        #
-        # Wait briefly for swayimg to exit cleanly.
-        #
-
         try:
             swayimg.wait(timeout=2)
+
         except subprocess.TimeoutExpired:
             swayimg.kill()
             swayimg.wait()
@@ -332,12 +480,14 @@ def run_screensaver(fd):
 
         try:
             grab(fd, False)
+
         finally:
             if swayimg is not None and swayimg.poll() is None:
                 swayimg.terminate()
 
                 try:
                     swayimg.wait(timeout=2)
+
                 except subprocess.TimeoutExpired:
                     swayimg.kill()
                     swayimg.wait()
@@ -345,6 +495,14 @@ def run_screensaver(fd):
 
 def main():
     mqtt_client = start_mqtt()
+
+    monitor_thread = threading.Thread(
+        target=ambient_monitor,
+        name="ambient-monitor",
+        daemon=True,
+    )
+
+    monitor_thread.start()
 
     print(f"Opening {DEVICE}", flush=True)
 
@@ -359,13 +517,6 @@ def main():
 
             wait_for_idle(fd)
             run_screensaver(fd)
-
-            #
-            # run_screensaver() doesn't return until the wake gesture has
-            # completely finished and the touchscreen has been released.
-            #
-            # Start a brand-new idle interval now.
-            #
 
     finally:
         os.close(fd)
