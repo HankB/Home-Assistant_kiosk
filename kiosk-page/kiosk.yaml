@@ -128,47 +128,328 @@ views:
             columns: 3
             square: false
             cards:
-              - type: tile
+              - type: custom:button-card
                 entity: light.famrm_cindy
                 name: Cindy
                 icon: mdi:lightbulb
+
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-              - type: tile
+
+                show_icon: true
+                show_name: true
+                show_state: false
+                show_label: true
+
+                label: |
+                  [[[
+                    const light = states['light.famrm_cindy'];
+
+                    if (light.state === 'off') {
+                      return 'Off';
+                    }
+
+                    const brightness = light.attributes.brightness;
+
+                    if (brightness !== undefined && brightness !== null) {
+                      return `${Math.round(brightness / 255 * 100)}%`;
+                    }
+
+                    return 'On';
+                  ]]]
+
+                styles:
+                  card:
+                    - height: 56px
+                    - padding: 8px 12px
+                  grid:
+                    - grid-template-areas: '"i n" "i l"'
+                    - grid-template-columns: 40px 1fr
+                    - grid-template-rows: 1fr 1fr
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                  img_cell:
+                    - width: 40px
+                    - height: 40px
+                    - border-radius: 50%
+                    - justify-self: start
+                    - align-self: center
+                  name:
+                    - justify-self: start
+                    - align-self: end
+                    - font-size: 18px
+                    - font-weight: 500
+                  label:
+                    - justify-self: start
+                    - align-self: start
+                    - font-size: 16px
+
+                state:
+                  - value: "on"
+                    styles:
+                      icon:
+                        - color: var(--state-light-active-color)
+                      img_cell:
+                        - background-color: color-mix(in srgb, var(--state-light-active-color) 20%, transparent)
+
+                  - value: "off"
+                    styles:
+                      icon:
+                        - color: var(--state-icon-color)
+                      img_cell:
+                        - background-color: var(--ha-card-background)
+              - type: custom:button-card
                 entity: light.famrm_hank
                 name: Hank
                 icon: mdi:lightbulb
+
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-              - type: tile
+
+                show_icon: true
+                show_name: true
+                show_state: false
+                show_label: true
+
+                label: |
+                  [[[
+                    const light = states['light.famrm_hank'];
+
+                    if (light.state === 'off') {
+                      return 'Off';
+                    }
+
+                    const brightness = light.attributes.brightness;
+
+                    if (brightness !== undefined && brightness !== null) {
+                      return `${Math.round(brightness / 255 * 100)}%`;
+                    }
+
+                    return 'On';
+                  ]]]
+
+                styles:
+                  card:
+                    - height: 56px
+                    - padding: 8px 12px
+                  grid:
+                    - grid-template-areas: '"i n" "i l"'
+                    - grid-template-columns: 40px 1fr
+                    - grid-template-rows: 1fr 1fr
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                  img_cell:
+                    - width: 40px
+                    - height: 40px
+                    - border-radius: 50%
+                    - justify-self: start
+                    - align-self: center
+                  name:
+                    - justify-self: start
+                    - align-self: end
+                    - font-size: 18px
+                    - font-weight: 500
+                  label:
+                    - justify-self: start
+                    - align-self: start
+                    - font-size: 16px
+
+                state:
+                  - value: "on"
+                    styles:
+                      icon:
+                        - color: var(--state-light-active-color)
+                      img_cell:
+                        - background-color: color-mix(in srgb, var(--state-light-active-color) 20%, transparent)
+                  - value: "off"
+                    styles:
+                      icon:
+                        - color: var(--state-icon-color)
+                      img_cell:
+                        - background-color: var(--ha-card-background)
+
+              - type: custom:button-card
                 entity: light.living_room_color
                 name: Living Room
                 icon: mdi:lightbulb
+
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-              - type: tile
+
+                show_icon: true
+                show_name: true
+                show_state: false
+                show_label: true
+
+                label: |
+                  [[[
+                    const light = states['light.living_room_color'];
+
+                    if (light.state === 'off') {
+                      return 'Off';
+                    }
+
+                    const brightness = light.attributes.brightness;
+
+                    if (brightness !== undefined && brightness !== null) {
+                      return `${Math.round(brightness / 255 * 100)}%`;
+                    }
+
+                    return 'On';
+                  ]]]
+
+                styles:
+                  card:
+                    - height: 56px
+                    - padding: 8px 12px
+                  grid:
+                    - grid-template-areas: '"i n" "i l"'
+                    - grid-template-columns: 40px 1fr
+                    - grid-template-rows: 1fr 1fr
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                  img_cell:
+                    - width: 40px
+                    - height: 40px
+                    - border-radius: 50%
+                    - justify-self: start
+                    - align-self: center
+                  name:
+                    - justify-self: start
+                    - align-self: end
+                    - font-size: 18px
+                    - font-weight: 500
+                  label:
+                    - justify-self: start
+                    - align-self: start
+                    - font-size: 16px
+
+                state:
+                  - value: "on"
+                    styles:
+                      icon:
+                        - color: var(--state-light-active-color)
+                      img_cell:
+                        - background-color: color-mix(in srgb, var(--state-light-active-color) 20%, transparent)
+                  - value: "off"
+                    styles:
+                      icon:
+                        - color: var(--state-icon-color)
+                      img_cell:
+                        - background-color: var(--ha-card-background)
+
+              - type: custom:button-card
                 entity: switch.outdoor_plug_1
-                name: Outdoor
+                name: Outdoor 1
                 icon: mdi:power-socket-us
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-              - type: tile
+                show_icon: true
+                show_name: true
+                show_state: true
+                styles:
+                  card:
+                    - height: 56px
+                    - padding: 8px 12px
+                  grid:
+                    - grid-template-areas: '"i n" "i s"'
+                    - grid-template-columns: 40px 1fr
+                    - grid-template-rows: 1fr 1fr
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                  img_cell:
+                    - width: 40px
+                    - height: 40px
+                    - border-radius: 50%
+                    - justify-self: start
+                    - align-self: center
+                  name:
+                    - justify-self: start
+                    - align-self: end
+                    - font-size: 18px
+                    - font-weight: 500
+                  state:
+                    - justify-self: start
+                    - align-self: start
+                    - font-size: 16px
+                state:
+                  - value: "on"
+                    styles:
+                      icon:
+                        - color: var(--state-switch-active-color)
+                      img_cell:
+                        - background-color: color-mix(in srgb, var(--state-switch-active-color) 20%, transparent)
+                  - value: "off"
+                    styles:
+                      icon:
+                        - color: var(--state-icon-color)
+                      img_cell:
+                        - background-color: var(--ha-card-background)
+
+              - type: custom:button-card
                 entity: switch.outdoor_plug_2
-                name: Outdoor
+                name: Outdoor 2
                 icon: mdi:power-socket-us
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-              - type: tile
+                show_icon: true
+                show_name: true
+                show_state: true
+                styles:
+                  card:
+                    - height: 56px
+                    - padding: 8px 12px
+                  grid:
+                    - grid-template-areas: '"i n" "i s"'
+                    - grid-template-columns: 40px 1fr
+                    - grid-template-rows: 1fr 1fr
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                  img_cell:
+                    - width: 40px
+                    - height: 40px
+                    - border-radius: 50%
+                    - justify-self: start
+                    - align-self: center
+                  name:
+                    - justify-self: start
+                    - align-self: end
+                    - font-size: 18px
+                    - font-weight: 500
+                  state:
+                    - justify-self: start
+                    - align-self: start
+                    - font-size: 16px
+                state:
+                  - value: "on"
+                    styles:
+                      icon:
+                        - color: var(--state-switch-active-color)
+                      img_cell:
+                        - background-color: color-mix(in srgb, var(--state-switch-active-color) 20%, transparent)
+                  - value: "off"
+                    styles:
+                      icon:
+                        - color: var(--state-icon-color)
+                      img_cell:
+                        - background-color: var(--ha-card-background)
+
+              - type: custom:button-card
                 entity: switch.tpplug02_garage_lights
                 name: Garage Light
                 icon: mdi:lightbulb
@@ -176,6 +457,48 @@ views:
                   action: toggle
                 hold_action:
                   action: more-info
+                show_icon: true
+                show_name: true
+                show_state: true
+                styles:
+                  card:
+                    - height: 56px
+                    - padding: 8px 12px
+                  grid:
+                    - grid-template-areas: '"i n" "i s"'
+                    - grid-template-columns: 40px 1fr
+                    - grid-template-rows: 1fr 1fr
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                  img_cell:
+                    - width: 40px
+                    - height: 40px
+                    - border-radius: 50%
+                    - justify-self: start
+                    - align-self: center
+                  name:
+                    - justify-self: start
+                    - align-self: end
+                    - font-size: 18px
+                    - font-weight: 500
+                  state:
+                    - justify-self: start
+                    - align-self: start
+                    - font-size: 16px
+                state:
+                  - value: "on"
+                    styles:
+                      icon:
+                        - color: var(--state-switch-active-color)
+                      img_cell:
+                        - background-color: color-mix(in srgb, var(--state-switch-active-color) 20%, transparent)
+                  - value: "off"
+                    styles:
+                      icon:
+                        - color: var(--state-icon-color)
+                      img_cell:
+                        - background-color: var(--ha-card-background)
           - type: grid
             columns: 5
             square: false
