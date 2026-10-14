@@ -132,17 +132,14 @@ views:
                 entity: light.famrm_cindy
                 name: Cindy
                 icon: mdi:lightbulb
-
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-
                 show_icon: true
                 show_name: true
                 show_state: false
                 show_label: true
-
                 label: |
                   [[[
                     const light = states['light.famrm_cindy'];
@@ -159,7 +156,6 @@ views:
 
                     return 'On';
                   ]]]
-
                 styles:
                   card:
                     - height: 56px
@@ -186,16 +182,16 @@ views:
                     - justify-self: start
                     - align-self: start
                     - font-size: 16px
-
                 state:
-                  - value: "on"
+                  - value: 'on'
                     styles:
                       icon:
                         - color: var(--state-light-active-color)
                       img_cell:
-                        - background-color: color-mix(in srgb, var(--state-light-active-color) 20%, transparent)
-
-                  - value: "off"
+                        - background-color: >-
+                            color-mix(in srgb, var(--state-light-active-color)
+                            20%, transparent)
+                  - value: 'off'
                     styles:
                       icon:
                         - color: var(--state-icon-color)
@@ -205,17 +201,14 @@ views:
                 entity: light.famrm_hank
                 name: Hank
                 icon: mdi:lightbulb
-
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-
                 show_icon: true
                 show_name: true
                 show_state: false
                 show_label: true
-
                 label: |
                   [[[
                     const light = states['light.famrm_hank'];
@@ -232,7 +225,6 @@ views:
 
                     return 'On';
                   ]]]
-
                 styles:
                   card:
                     - height: 56px
@@ -259,36 +251,33 @@ views:
                     - justify-self: start
                     - align-self: start
                     - font-size: 16px
-
                 state:
-                  - value: "on"
+                  - value: 'on'
                     styles:
                       icon:
                         - color: var(--state-light-active-color)
                       img_cell:
-                        - background-color: color-mix(in srgb, var(--state-light-active-color) 20%, transparent)
-                  - value: "off"
+                        - background-color: >-
+                            color-mix(in srgb, var(--state-light-active-color)
+                            20%, transparent)
+                  - value: 'off'
                     styles:
                       icon:
                         - color: var(--state-icon-color)
                       img_cell:
                         - background-color: var(--ha-card-background)
-
               - type: custom:button-card
                 entity: light.living_room_color
                 name: Living Room
                 icon: mdi:lightbulb
-
                 tap_action:
                   action: toggle
                 hold_action:
                   action: more-info
-
                 show_icon: true
                 show_name: true
                 show_state: false
                 show_label: true
-
                 label: |
                   [[[
                     const light = states['light.living_room_color'];
@@ -305,7 +294,6 @@ views:
 
                     return 'On';
                   ]]]
-
                 styles:
                   card:
                     - height: 56px
@@ -332,21 +320,21 @@ views:
                     - justify-self: start
                     - align-self: start
                     - font-size: 16px
-
                 state:
-                  - value: "on"
+                  - value: 'on'
                     styles:
                       icon:
                         - color: var(--state-light-active-color)
                       img_cell:
-                        - background-color: color-mix(in srgb, var(--state-light-active-color) 20%, transparent)
-                  - value: "off"
+                        - background-color: >-
+                            color-mix(in srgb, var(--state-light-active-color)
+                            20%, transparent)
+                  - value: 'off'
                     styles:
                       icon:
                         - color: var(--state-icon-color)
                       img_cell:
                         - background-color: var(--ha-card-background)
-
               - type: custom:button-card
                 entity: switch.outdoor_plug_1
                 name: Outdoor 1
@@ -385,19 +373,20 @@ views:
                     - align-self: start
                     - font-size: 16px
                 state:
-                  - value: "on"
+                  - value: 'on'
                     styles:
                       icon:
                         - color: var(--state-switch-active-color)
                       img_cell:
-                        - background-color: color-mix(in srgb, var(--state-switch-active-color) 20%, transparent)
-                  - value: "off"
+                        - background-color: >-
+                            color-mix(in srgb, var(--state-switch-active-color)
+                            20%, transparent)
+                  - value: 'off'
                     styles:
                       icon:
                         - color: var(--state-icon-color)
                       img_cell:
                         - background-color: var(--ha-card-background)
-
               - type: custom:button-card
                 entity: switch.outdoor_plug_2
                 name: Outdoor 2
@@ -436,19 +425,20 @@ views:
                     - align-self: start
                     - font-size: 16px
                 state:
-                  - value: "on"
+                  - value: 'on'
                     styles:
                       icon:
                         - color: var(--state-switch-active-color)
                       img_cell:
-                        - background-color: color-mix(in srgb, var(--state-switch-active-color) 20%, transparent)
-                  - value: "off"
+                        - background-color: >-
+                            color-mix(in srgb, var(--state-switch-active-color)
+                            20%, transparent)
+                  - value: 'off'
                     styles:
                       icon:
                         - color: var(--state-icon-color)
                       img_cell:
                         - background-color: var(--ha-card-background)
-
               - type: custom:button-card
                 entity: switch.tpplug02_garage_lights
                 name: Garage Light
@@ -487,13 +477,15 @@ views:
                     - align-self: start
                     - font-size: 16px
                 state:
-                  - value: "on"
+                  - value: 'on'
                     styles:
                       icon:
                         - color: var(--state-switch-active-color)
                       img_cell:
-                        - background-color: color-mix(in srgb, var(--state-switch-active-color) 20%, transparent)
-                  - value: "off"
+                        - background-color: >-
+                            color-mix(in srgb, var(--state-switch-active-color)
+                            20%, transparent)
+                  - value: 'off'
                     styles:
                       icon:
                         - color: var(--state-icon-color)
@@ -507,11 +499,9 @@ views:
                 entity: sensor.fridge_temp
                 name: Fridge
                 icon: mdi:fridge-outline
-
                 show_icon: true
                 show_name: true
                 show_state: true
-
                 styles:
                   card:
                     - height: 56px
@@ -542,11 +532,9 @@ views:
                 entity: sensor.kitchen_fridge_power
                 name: Fridge W
                 icon: mdi:flash
-
                 show_icon: true
                 show_name: true
                 show_state: true
-
                 styles:
                   card:
                     - height: 56px
@@ -573,16 +561,13 @@ views:
                     - justify-self: start
                     - align-self: start
                     - font-size: 16px
-
               - type: custom:button-card
                 entity: sensor.freezer_temp
                 name: Freezer
                 icon: mdi:snowflake
-
                 show_icon: true
                 show_name: true
                 show_state: true
-
                 styles:
                   card:
                     - height: 56px
@@ -609,16 +594,13 @@ views:
                     - justify-self: start
                     - align-self: start
                     - font-size: 16px
-
               - type: custom:button-card
                 entity: sensor.basement_freezer_power
                 name: Freezer W
                 icon: mdi:flash
-
                 show_icon: true
                 show_name: true
                 show_state: true
-
                 styles:
                   card:
                     - height: 56px
@@ -645,16 +627,13 @@ views:
                     - justify-self: start
                     - align-self: start
                     - font-size: 16px
-
               - type: custom:button-card
                 entity: sensor.garage_door_position
                 name: Garage
                 icon: mdi:garage
-
                 show_icon: true
                 show_name: true
                 show_state: true
-
                 styles:
                   card:
                     - height: 56px
