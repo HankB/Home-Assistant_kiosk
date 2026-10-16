@@ -5,3 +5,6 @@
 
 # Start the local photo screensaver controller.
 /home/kiosk/bin/screensaver-controller.py &
+
+# Start the process that publishes light levels
+/home/kiosk/bin/veml7700-mqtt &
