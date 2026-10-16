@@ -25,6 +25,8 @@ The features fall into three areas at present:
 
 ## Status
 
+* 2026-10-15 program to publish ambient light values.
+* 2026-10-14 Turn off display when dark implemented.
 * 2026-10-13 (as of) kiosk screen roughed out.
 * 2026-10-13 (as of) screen saver/picture display working.
 * 2026-10-13 (as of) kiosk configuration of browser mostly working.
@@ -32,3 +34,4 @@ The features fall into three areas at present:
 * [Kiosk page notes](kiosk-page/README.md)
 * [Browser notes](browser/README.md)
 * [Screen saver notes](screensaver/README.md)
+* [VEML7700 ambient light sensor publisher](https://github.com/HankB/veml7700-mqtt/tree/main)
