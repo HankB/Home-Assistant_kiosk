@@ -28,4 +28,7 @@ Test MQTT messages can be generated using the following:
 mosquitto_pub -h pilog3b \
     -t HA/kiosk/kiosk/lighting \
     -m "{\"t\":$(date +%s),\"level\":47,\"device\":\"TEST\"}"
-```
+
+## Requirements
+
+sudo apt install mosquitto-clients python3-paho-mqtt
