@@ -8,6 +8,7 @@ import struct
 import subprocess
 import threading
 import time
+import math
 
 import paho.mqtt.client as mqtt
 
@@ -37,14 +38,22 @@ MQTT_TOPIC = "HA/kiosk/kiosk/lighting"
 # 15-minute reporting interval.
 LIGHT_READING_MAX_AGE = 120
 
+# Allowable values from the publisher
+# 
+LIGHT_LEVEL_MIN = 0.0
+LIGHT_LEVEL_MAX = 276.0
+
 # Hysteresis:
 #
 #   level <= DARK_THRESHOLD   -> candidate DARK
 #   level >= LIGHT_THRESHOLD  -> candidate LIGHT
 #   between thresholds        -> retain current/candidate state
 #
-DARK_THRESHOLD = 10
-LIGHT_THRESHOLD = 20
+# These values are expected to change as actual room-light behavior
+# is observed.
+#
+DARK_THRESHOLD = 3.0
+LIGHT_THRESHOLD = 7.0
 
 # Short values are useful during testing.
 DARK_CONFIRM_TIME = 10
@@ -385,15 +394,18 @@ def on_message(client, userdata, message):
 
     try:
         timestamp = int(payload["t"])
-        level = int(payload["level"])
-
+        level = float(payload["level"])
+    
     except (KeyError, TypeError, ValueError):
         log(
             "Lighting: missing or invalid t/level -- ignored"
         )
         return
-
-    if not 1 <= level <= 100:
+    
+    if (
+        not math.isfinite(level)
+        or not LIGHT_LEVEL_MIN <= level <= LIGHT_LEVEL_MAX
+    ):
         log(
             f"Lighting: invalid level={level} -- ignored"
         )
