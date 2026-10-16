@@ -31,7 +31,7 @@ IMAGE_DIRECTORY = os.path.expanduser("~/Pictures/screensaver")
 
 MQTT_BROKER = "pilog3b"
 MQTT_PORT = 1883
-MQTT_TOPIC = "HA/kiosk/kiosk/lighting"
+MQTT_TOPIC = "HA/ocular/kiosk/lighting"
 
 # 120 seconds is convenient for testing.
 # Production should be comfortably longer than the sensor's normal
