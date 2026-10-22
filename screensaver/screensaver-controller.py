@@ -170,6 +170,7 @@ def start_slideshow():
             "--slideshow",
             "--order=random",
             "--scale=fill",
+            "-c slideshow.time=15",
             IMAGE_DIRECTORY,
         ],
         env=wayland_environment(),
