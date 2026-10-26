@@ -29,7 +29,7 @@ IMAGE_DIRECTORY = os.path.expanduser("~/Pictures/screensaver")
 # MQTT / ambient-light configuration
 #
 
-MQTT_BROKER = "pilog3b"
+MQTT_BROKER = "mqtt"
 MQTT_PORT = 1883
 MQTT_TOPIC = "HA/ocular/kiosk/lighting"
 
@@ -170,7 +170,7 @@ def start_slideshow():
             "--slideshow",
             "--order=random",
             "--scale=fill",
-            "-c slideshow.time=15",
+            "-c viewer.slideshow_time=15",
             IMAGE_DIRECTORY,
         ],
         env=wayland_environment(),
