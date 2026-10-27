@@ -17,14 +17,21 @@ If you object to the use of AI/LLMs for system development, you won't like this.
 
 These grew organically during the process. Once a first screen was realized I found that this display is subject to burn in. We implemented screen blanking. Then I looked at the blank screen and thought that a rotating picture display would be better. Now I'm looking at the display before I turn in for the night and I think that it should go dark when ambient is dark. And so it goes.
 
-The features fall into three areas at present:
+### Features
 
-* Configuration of a page suitable for a small 800x400 display and which includes the information most important to me. This is a YAML configuratoin page and will be found in `./yaml/`
+These fall into three areas at present:
+
+* Configuration of a page suitable for a small 800x480 display and which includes the information most important to me. This is a YAML configuration page 
 * Configuration of the web browser to take the full screen for the Kiosk page.
 * Configuration of screen blanking and a rotating picture display.
 
+### Future plans
+
+There remains a blank row on the bottom of the screen that could be used for more indicators or perhaps something like a calendar display.
+
 ## Status
 
+* 2026-10-27 Complete - AKA Maintenance mode. SWMBO uses it.
 * 2026-10-15 program to publish ambient light values.
 * 2026-10-14 Turn off display when dark implemented.
 * 2026-10-13 (as of) kiosk screen roughed out.
